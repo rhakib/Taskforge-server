@@ -25,10 +25,10 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     const taskCollection = client.db('taskForge').collection('tasks')
     const ongoingCollection = client.db('taskForge').collection('ongoing')
@@ -40,7 +40,9 @@ async function run() {
     })
 
     app.get('/tasks', async (req, res) => {
-      const result = await taskCollection.find().toArray()
+      const email = req.query.email
+      const query = {email: email}
+      const result = await taskCollection.find(query).toArray()
       res.send(result)
     })
 
@@ -67,6 +69,29 @@ async function run() {
         }
       }
       const result = await taskCollection.updateOne(filter, updatedDoc)
+      res.send(result)
+    })
+
+    app.patch('/tasks/update/:id', async (req, res) => {
+      const task = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          title: task.title,
+          description: task.description,
+          deadline: task.deadline,
+          priority: task.priority
+        }
+      }
+      const result = await taskCollection.updateOne(filter, updatedDoc)
+      res.send(result)
+    })
+
+    app.delete('/tasks/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await taskCollection.deleteOne(filter)
       res.send(result)
     })
 
